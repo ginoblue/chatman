@@ -10,13 +10,16 @@ public:
     ObjMap inclusions;
     ObjMap equivalences;
     ObjMap determiners;
-    bool include(Object & obj);
+    ObjMapMap attr_maps;
+    friend wostream & operator <<(wostream & out,Object * & obj);
+    bool include(Object * & obj);
 };
 class ObjectManager
 {
 public:
     ObjectManager();
     ~ObjectManager();
+    Object * find(const wstring & name, int & ret);
     ObjMap pool;
 
 };

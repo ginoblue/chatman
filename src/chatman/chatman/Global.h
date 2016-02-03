@@ -5,29 +5,30 @@
 #include <vector>
 #include <iostream>
 #include "thread.h"
-#include "stdio.h"
+#include <stdio.h>
 using namespace std;
 class Object;
 class ObjectManager;
 class Database;
 typedef unsigned int uint32;
 typedef map<wstring, Object *> ObjMap;
+typedef map<string, ObjMap *> ObjMapMap;
 typedef int int32;
 typedef long long int int64;
 typedef long long unsigned int uint64;
-typedef int32 ssize_t;
-typedef int64 off_t;
-typedef int32 mode_t;
-#define ERR(fmt, ...) pritnf("%s:%d - " fmt, __WHAT_FUNCTION__, __LINE__, ##__VA_ARGS__)
+
+#define ERR(fmt, ...) printf("%s:%d - " fmt, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define CM_NOT_FOUND 1
 class Global
 {
 public:
     Database * db;
     ObjectManager * obj_mgr;
     static Global * get_instance();
+    ~Global();
 private:
     Global();
-    ~Global();
+    
     
     
 
