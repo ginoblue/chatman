@@ -18,12 +18,18 @@ bool Object::include(Object * & obj){
 }
 wostream & operator <<(wostream & out, Object * & obj)
 {
+    if (!obj){
+        ERR("obj pointer is NULL\n");
+        return out;
+    }
+        
     wcout << obj->name <<endl;
     ObjMapMap::iterator it = obj->attr_maps.begin();
     for (; it != obj->attr_maps.end(); it++){
-        cout << it->first << ":" << endl;
+        cout << "  " << it->first << ":" << endl;
         ObjMap map = *(it->second);
         ObjMap::iterator i = map.begin();
+        wcout << "    ";
         for (; i != map.end(); i++){
             wcout << i->first << " ";
         }
@@ -45,8 +51,7 @@ Object * ObjectManager::find(const wstring & name, int & ret)
     Object * obj = NULL;
     ObjMap::iterator it = pool.find(name);
     if (it != pool.end()){
-        obj = it->second;
-        return 0;
+        return it->second;
     }
     ret = CM_NOT_FOUND;
     return obj;

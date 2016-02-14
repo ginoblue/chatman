@@ -13,7 +13,7 @@ int _tmain(int argc, _TCHAR* argv[])
     global->db->open();
     global->db->load();
     int ret = 0;
-    
+    /*
     Object * test1 = new Object(L"电脑");
     Object * test2 = new Object(L"显示器");
     Object * test3 = new Object(L"主机");
@@ -27,7 +27,7 @@ int _tmain(int argc, _TCHAR* argv[])
     test1->determiners.insert(ObjMap::value_type(test6->name, test6));
     global->db->save_all_objs();
     
-    /*
+    
     Object * test = global->db->find(L"电脑", ret);
     wcout<<test;
     */

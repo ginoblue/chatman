@@ -23,7 +23,11 @@ private:
     wstring string_to_wstring(const string & s);
     bool is_existent_in_json(const wstring & name);
     Object * Database::load_obj(const wstring & name);
-    fstream file;
+    //for read
+    ifstream file_in;
+    //for write
+    ofstream file_out;
     Json::Value root;
     string json_name;
+    string tmp_json_name;
 };

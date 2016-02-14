@@ -7,6 +7,7 @@ extern Global * global;
 Database::Database(void)
 {
     json_name = "c:\\record.json";
+    tmp_json_name = json_name + ".tmp";
 }
 
 Database::~Database(void)
@@ -23,6 +24,8 @@ int Database::close()
 {
     flush();
     close_json();
+    remove(json_name.c_str());
+    rename(tmp_json_name.c_str(), json_name.c_str());
     return 0;
 }
 int Database::load()
@@ -30,13 +33,13 @@ int Database::load()
     if (open() != 0)
         return -1;
     Json::Reader reader;
-    Json::Value val;
-    if (!reader.parse(file, val, false)){
+    if (!reader.parse(file_in, root, false)){
         ERR("Json reader parse error, maybe empty file\n");
+        root.clear();
         return -1;
     }
     try {
-        Json::Value::Members member = val.getMemberNames();
+        Json::Value::Members member = root.getMemberNames();
         Json::Value::Members::iterator it = member.begin();
         for (; it != member.end(); it++){
             if (load_obj(string_to_wstring(*it)) == NULL)
@@ -45,12 +48,11 @@ int Database::load()
     }
     catch (Json::LogicError & e) {
     	cout << e.what() << endl;
-        ERR("json file data not correct\n");
+        ERR("Json file data not correct\n");
         close_json();
         return -1;
     }
     
-    root = val;
     return 0;
 }
 string Database::wstring_to_string(const wstring & ws)
@@ -98,16 +100,14 @@ Object * Database::find(const string & name, int & ret)
 }
 int Database::flush()
 {
-    // load() make pointer point to file's end
-    // when fstream pointer point to file's end, it can
-    // not return to beginning
-    // work around to reopen : 
-    close_json();
     Json::FastWriter writer;
-    int ret = open();
-    if (ret != 0)
-        return ret;
-    file << writer.write(root);
+    file_out.open(tmp_json_name.c_str());
+    if (!file_out.is_open()){
+        ERR("Database open file error\n");
+        return -1;
+    }
+    file_out << writer.write(root);
+    file_out.close();
     return 0;
 }
 Object * Database::load_obj(const wstring & name)
@@ -120,8 +120,9 @@ Object * Database::load_obj(const wstring & name)
     if (root[wstring_to_string(name)].isNull())
         return NULL;
     obj = new Object();
-    string key = wstring_to_string(obj->name);
+    
     obj->name = name;
+    string key = wstring_to_string(name);
     ObjMapMap::iterator it = obj->attr_maps.begin();
     for (; it != obj->attr_maps.end(); it++){
         ObjMap * map = it->second;
@@ -150,24 +151,20 @@ int Database::save_obj(Object * & obj)
         ObjMap * map = it->second;
         string map_name = it->first;
         ObjMap::iterator i = map->begin();
+        attrs[map_name] = Json::nullValue;
         for (; i != map->end(); i++){
             attrs[map_name].append(wstring_to_string(i->first));
         }
         
-    }   
+    }
     root[key] = attrs;
     return 0;
 }
 int Database::open_json()
 {
-    if (!file.is_open()){
-        //create file
-        ofstream of(json_name.c_str(), ios::app);
-        if (of.is_open())
-            of.close();
-        file.open(json_name.c_str(), ios::in |
-            ios::out | ios::binary);
-        if (!file.is_open()){
+    if (!file_in.is_open()){
+        file_in.open(json_name.c_str(), ios::app | ios::binary);
+        if (!file_in.is_open()){
             ERR("Database open file error\n");
             return -1;
         }
@@ -176,8 +173,8 @@ int Database::open_json()
 }
 int Database::close_json()
 {
-    if (file.is_open())
-        file.close();
+    if (file_in.is_open())
+        file_in.close();
     return 0;
 }
 int Database::save_all_objs()
@@ -187,7 +184,8 @@ int Database::save_all_objs()
     for (; it != global->obj_mgr->pool.end(); it++) {
         ret = save_obj(it->second);
         if (ret != 0){
-            ERR("save obj error\n");
+            ERR("save obj error, obj name: %s\n",
+                wstring_to_string(it->second->name));
             return ret;
         }
     }
